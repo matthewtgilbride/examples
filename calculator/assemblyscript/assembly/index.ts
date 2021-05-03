@@ -1,6 +1,5 @@
-import { Request, Response, ResponseBuilder, Handlers as HTTPHandlers } from "@wasmcloud/actor-http-server/assembly/index";
-import { HealthCheckResponse, HealthCheckRequest, Handlers as CoreHandlers, HealthCheckResponseBuilder } from "@wasmcloud/actor-core/assembly/index";
-import { JSONEncoder } from "assemblyscript-json";
+import { Request, Response, ResponseBuilder, Handlers as HTTPHandlers } from "@wasmcloud/actor-http-server";
+import { HealthCheckResponse, HealthCheckRequest, Handlers as CoreHandlers, HealthCheckResponseBuilder } from "@wasmcloud/actor-core";
 
 export function wapc_init(): void {
   CoreHandlers.registerHealthRequest(HealthCheck);
@@ -16,37 +15,27 @@ function HandleRequest(request: Request): Response {
   const nums = request.queryString.split(",")
   const numOne = parseInt(nums[0])
   const numTwo = parseInt(nums[1])
-  let result = ""
+  let result: string;
   
-  switch(request.path) {
-    case "/add":
-      result = `add: ${numOne} + ${numTwo} = ${numOne + numTwo}`
-      break;
-    case "/sub":
-      result = `subtract: ${numOne} + ${numTwo} = ${numOne - numTwo}`
-      break;
-    case "/div":
-      if (numTwo === 0) {
-        result = "Can not divide by zero!"
-      } else {
-        result = `divide: ${numOne} / ${numTwo} = ${numOne / numTwo}`
-      }
+  if (request.path === "add") {
+    result = "add: " + numOne.toString() + " + " + numTwo.toString() + " = " + (numOne + numTwo).toString()
   }
-  
-  let encoder = new JSONEncoder();
-  
-  // Construct output JSON
-  encoder.pushObject("");
-  encoder.setString("result", result);
-  encoder.popObject();
-  
-  // Get serialized data
-  let json: Uint8Array = encoder.serialize();
+  else if (request.path === "sub") {
+    result = "subtract: " + numOne.toString() + " - " + numTwo.toString() + " = " + (numOne - numTwo).toString()
+  } else if (request.path === "div") {
+    if (numTwo === 0) {
+      result = "Can not divide by zero!"
+    } else {
+      result = "divide: " + numOne.toString() + " / " + numTwo.toString() +  " = " +  (numOne / numTwo).toString()
+    }
+  } else {
+    result = "Unsupported operation"
+  }
   
   return new ResponseBuilder()
     .withStatusCode(200)
     .withStatus("OK")
-    .withBody(json.buffer)
+    .withBody(String.UTF8.encode(result, true))
     .build();
 }
 
